@@ -1,0 +1,13 @@
+boto3==1.13.17
+celery==4.4.2
+# mlflow==1.8.0
+numpy==1.18.4
+pandas==1.0.3
+python-dotenv==0.13.0
+PyYAML==5.3.1
+requests==2.23.0
+# scikit-learn==0.23.1
+# spacy==2.3.0
+# spacy-langdetect==0.1.2
+torch==1.5.1
+transformers==2.11.0

@@ -1,0 +1,32 @@
+version: "3.6"
+
+services:
+  rabbit:
+    image: rabbitmq:3.8
+    container_name: celery_rabbit
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
+    ports:
+      - 5672:5672
+
+#  worker:
+#    build: .
+#    environment:
+#      - RABBIT_USER=${RABBIT_USER}
+#      - RABBIT_PASSWORD=${RABBIT_PASSWORD}
+#      - RABBIT_BROKER=rabbit
+#    depends_on:
+#      - rabbit
+#    volumes:
+#      - ./:/src
+
+  flower:
+    image: mher/flower:0.9
+    container_name: celery_flower
+    environment:
+        - CELERY_BROKER_URL=amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@rabbit:5672
+    ports:
+      - 5555:5555
+#    depends_on:
+#      - worker

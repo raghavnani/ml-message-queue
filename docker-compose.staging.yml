@@ -1,0 +1,55 @@
+version: "3.6"
+
+services:
+  rabbit-staging:
+    image: rabbitmq:3.8
+    container_name: celery_rabbit-staging
+    networks:
+      - moderat
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER_STAGING}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD_STAGING}
+    labels:
+      - "traefik.enable=false"
+
+  worker-staging:
+    build: .
+    networks:
+      - moderat
+    environment:
+      - RABBIT_USER=${RABBIT_USER_STAGING}
+      - RABBIT_PASSWORD=${RABBIT_PASSWORD_STAGING}
+      - RABBIT_BROKER=rabbit-staging
+      - MLFLOW_TRACKING_USERNAME=${MLFLOW_TRACKING_USERNAME_STAGING}
+      - MLFLOW_TRACKING_PASSWORD=${MLFLOW_TRACKING_PASSWORD_STAGING}
+      - MLFLOW_TRACKING_URL=${MLFLOW_TRACKING_URL_STAGING}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_STAGING}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_STAGING}
+      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT_URL_STAGING}
+      - DASHBOARD_API=http://dashboard-staging:5000/
+    labels:
+      - "traefik.enable=false"
+    depends_on:
+      - rabbit-staging
+
+  flower-staging:
+    image: mher/flower:0.9
+    container_name: celery_flower-staging
+    networks:
+      - moderat
+    environment:
+        - CELERY_BROKER_URL=amqp://${RABBIT_USER_STAGING}:${RABBIT_PASSWORD_STAGING}@rabbit-staging:5672
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.queue_staging.entrypoints=http,https"
+      - "traefik.http.routers.queue_staging.rule=Host(`queue-staging.moderat.nrw`)"
+      - "traefik.http.routers.queue_staging.tls=true"
+      - "traefik.http.routers.queue_staging.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.queue_staging-auth.basicauth.users=admin:$$apr1$$mCSUSSsI$$dyjh6MhmevucrEZwC3Fbn."
+      - "traefik.http.routers.queue_staging.middlewares=queue_staging-auth@docker"
+    depends_on:
+      - worker-staging
+
+networks:
+  moderat:
+    external: true

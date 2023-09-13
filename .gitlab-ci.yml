@@ -1,0 +1,27 @@
+image: python:3.7-buster
+before_script:
+ - apt-get update
+
+stages:
+  - test
+  - build
+
+build and deploy queue staging:
+  stage: build
+  environment:
+    name: staging
+    url: http://d-3110s31.uni-muenster.de/
+  script:
+    # Run ssh-agent and add SSH key stored in SSH_PRIVATE_KEY variable
+    - apt-get install openssh-client bash
+    - mkdir ~/.ssh/
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod -R 600 ~/.ssh/
+
+    # Run docker-compose to build all containers
+    - ssh cipipeline@d-3110s31.uni-muenster.de -p 2222 "cd ps-comment-ai-queue-staging && git reset --hard HEAD && git pull origin develop"
+    - ssh cipipeline@d-3110s31.uni-muenster.de -p 2222 "cd ps-comment-ai-queue-staging && docker-compose -f docker-compose.staging.yml build --pull"
+    - ssh cipipeline@d-3110s31.uni-muenster.de -p 2222 "cd ps-comment-ai-queue-staging && docker-compose -f docker-compose.staging.yml up -d --no-build --scale worker-staging=3"
+  only:
+    - develop
